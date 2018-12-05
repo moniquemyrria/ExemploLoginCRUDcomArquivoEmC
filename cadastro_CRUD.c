@@ -99,7 +99,6 @@ void listar(){
 	pFuncionario = fopen("Funcionarios.txt","rb");
 	if(pFuncionario!=NULL){
 		printf("\n\n\t--------------------------------------------------\n\t\t\tLISTAGEM DE FUNCIONARIOS\n\t--------------------------------------------------\n\n");
-		
 		rewind(pFuncionario);
 		while(!feof(pFuncionario)){
 			fread(&auxfunc,sizeof(Funcionario),1,pFuncionario);
@@ -113,6 +112,7 @@ void listar(){
 				}
 			}
 		}
+		fclose(pFuncionario);
 	}else{
 		printf(" Erro ao tentar abrir arquivo\n");
 	}
@@ -138,6 +138,7 @@ void alterar(){
 	fflush(stdin);
 	gets(nomePesquisa);
 	if(verificaNomeExistente(strupr(nomePesquisa)) == 1){
+		fclose(pFuncionario);
 		pFuncionario = fopen("Funcionarios.txt","rb+");
 		rewind(pFuncionario);
 		while(!feof(pFuncionario)){
@@ -153,6 +154,7 @@ void alterar(){
 					gets(nomePesquisa);
 					fclose(pFuncionario);
 					if((verificaNomeExistente(strupr(nomePesquisa))== 0) || ((verificaNomeExistente(strupr(nomePesquisa)) == 1) && (strcmp(auxfunc.nome,strupr(nomePesquisa)) == 0))){
+						fclose(pFuncionario);
 						pFuncionario = fopen("Funcionarios.txt","rb+");
 						strcpy(funcAlterado.nome,strupr(strupr(nomePesquisa)));
 						printf(" Endereco: ");
@@ -178,8 +180,8 @@ void alterar(){
 					}
 					
 					if ((verificaNomeExistente(nomePesquisa) == 1) && (strcmp(auxfunc.nome,nomePesquisa) != 0)){
-						printf("\n Nao foi possivel alterar os dados do Funcionario.\n Voce esta tentando inserir um nome que ja existe na base de dados.\n ");
 						fclose(pFuncionario);
+						printf("\n Nao foi possivel alterar os dados do Funcionario.\n Voce esta tentando inserir um nome que ja existe na base de dados.\n ");
 						break;		
 					}
 				}
@@ -215,10 +217,9 @@ void excluir(){
 			if(!feof(pFuncionario)){
 				if(strcmp(funcExcluir.nome,strupr(nomePesquisa))==0){
 					printf("\n Funcionario Localizado!\n Registro excluido com sucesso!\n ");
+				}else{
 					fwrite(&funcExcluir,sizeof(Funcionario),1,pExcluir);
 				}
-				
-				
 			}
 		}
 		fclose(pFuncionario);
@@ -228,8 +229,8 @@ void excluir(){
 	}else{
 		printf("\n Funcionario nao localizado!\n ");		
 	}
-	fclose(pFuncionario);
-	fclose(pExcluir);
+	//fclose(pFuncionario);
+	//fclose(pExcluir);
 	getch();
 	system("cls");
 }
