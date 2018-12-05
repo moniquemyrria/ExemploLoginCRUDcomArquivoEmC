@@ -37,6 +37,7 @@ FILE *pFuncionario;
 //Main - Função Principal
 int main(){
 	validaLogin();
+	//menuCrud();
 }
 
 //Procedimento - CADASTRAR funcionario
@@ -125,71 +126,62 @@ void listar(){
 	system("cls");
 }
 
-//Procedimento - ALTERAR dados do funcionario
 void alterar(){
 	
-	Funcionario auxfunc, funcAlterado;
+	Funcionario func, funcAlt;
 	int cont=-1;
-	char nomePesquisa[20];
-	system("cls");
+	char nomePesquisa[20], nome[20];
 	
+	system("cls");
 	printf("\n\n\t--------------------------------------------------\n\t\t\tALTERAR FUNCIONARIO\n\t--------------------------------------------------\n\n");
 	printf("\n Dados da Pesquisa...\n Informe o NOME do Funcionario que deseja alterar:\n ");
 	fflush(stdin);
 	gets(nomePesquisa);
 	if(verificaNomeExistente(strupr(nomePesquisa)) == 1){
-		fclose(pFuncionario);
-		pFuncionario = fopen("Funcionarios.txt","rb+");
-		rewind(pFuncionario);
-		while(!feof(pFuncionario)){
-			fread(&auxfunc,sizeof(Funcionario),1,pFuncionario);
-			if(!feof(pFuncionario)){
-				cont++;
-				if(strcmp(nomePesquisa,auxfunc.nome)==0){
-					printf("\n Dados do Funcionario localizado:\n");
-					consulta(auxfunc.nome);
-					printf("\n Informe os dados para alteracao do Funcionario.\n");
-					printf(" Nome: ");
-					fflush(stdin);
-					gets(nomePesquisa);
-					fclose(pFuncionario);
-					if((verificaNomeExistente(strupr(nomePesquisa))== 0) || ((verificaNomeExistente(strupr(nomePesquisa)) == 1) && (strcmp(auxfunc.nome,strupr(nomePesquisa)) == 0))){
-						fclose(pFuncionario);
-						pFuncionario = fopen("Funcionarios.txt","rb+");
-						strcpy(funcAlterado.nome,strupr(strupr(nomePesquisa)));
+		printf("\n Informe os dados para alteracao do Funcionario.\n");
+		printf(" Nome: ");
+		fflush(stdin);
+		gets(nome);
+		if((verificaNomeExistente(strupr(nome)) == 0) || ((verificaNomeExistente(strupr(nome)) == 1) && (strcmp(nomePesquisa,strupr(nome)) == 0))){
+			pFuncionario = fopen("Funcionarios.txt","rb+");
+			rewind(pFuncionario);	
+			while(!feof(pFuncionario)){
+				fread(&func,sizeof(Funcionario),1,pFuncionario);
+				if(!feof(pFuncionario)){
+					cont++;
+					if(strcmp(func.nome,strupr(nomePesquisa))==0){
+						strcpy(funcAlt.nome,strupr(nome));
 						printf(" Endereco: ");
 						fflush(stdin);
-						gets(funcAlterado.endereco);
+						gets(funcAlt.endereco);
 						printf(" Idade: ");
-						scanf("%d",&funcAlterado.idade);
+						scanf("%d",&funcAlt.idade);
 						printf(" Valor Salario R$: ");
-						scanf("%f",&funcAlterado.salario);
+						scanf("%f",&funcAlt.salario);
 						printf(" Login: ");
 						fflush(stdin);
-						gets(funcAlterado.usu.login);
+						gets(funcAlt.usu.login);
 						printf(" Senha: ");
 						fflush(stdin);
-						gets(funcAlterado.usu.senha);
-						funcAlterado.id = auxfunc.id;
-						funcAlterado.cargo = auxfunc.cargo; 
+						gets(funcAlt.usu.senha);
+						funcAlt.id = func.id;
+						funcAlt.cargo = func.cargo; 
 						fseek(pFuncionario,cont*sizeof(Funcionario),SEEK_SET);
-						fwrite(&funcAlterado,sizeof(Funcionario),1,pFuncionario);
+						fwrite(&funcAlt,sizeof(Funcionario),1,pFuncionario);
 						fclose(pFuncionario);
-						printf("\n Dados do Funcionario alterado com sucesso!\n");		
+						printf("\n Dados do Funcionario alterado com sucesso!\n");	
+						fclose(pFuncionario);
 						break;
-					}
-					
-					if ((verificaNomeExistente(nomePesquisa) == 1) && (strcmp(auxfunc.nome,nomePesquisa) != 0)){
-						fclose(pFuncionario);
-						printf("\n Nao foi possivel alterar os dados do Funcionario.\n Voce esta tentando inserir um nome que ja existe na base de dados.\n ");
-						break;		
 					}
 				}
 			}
 		}
-	}else{
-		printf("\n Funcionario nao localizado!\n ");
-		fclose(pFuncionario);		
+		if ((verificaNomeExistente(nomePesquisa) == 1) && (strcmp(func.nome,nomePesquisa) != 0)){
+			printf("\n Nao foi possivel alterar os dados do Funcionario.\n Voce esta tentando inserir um nome que ja existe na base de dados.\n ");		
+		}
+	}
+	else{
+		printf("\n Funcionario nao localizado!\n ");	
 	}
 	fclose(pFuncionario);
 	getch();
@@ -200,7 +192,9 @@ void alterar(){
 void excluir(){
 	char nomePesquisa[20];
 	Funcionario funcExcluir;
+	
 	FILE *pExcluir;
+	
 	system("cls");
 	printf("\n\n\t--------------------------------------------------\n\t\t\tENCLUIR FUNCIONARIO\n\t--------------------------------------------------\n\n");
 	printf("\n Dados da Pesquisa...\n Informe o NOME do Funcionario que deseja excluir:\n ");
@@ -208,12 +202,14 @@ void excluir(){
 	gets(nomePesquisa);
 	if(verificaNomeExistente(strupr(nomePesquisa))== 1){
 		fclose(pFuncionario);
+		
 		pFuncionario = fopen("Funcionarios.txt","rb+");
+		
 		pExcluir = fopen("pExcluir.txt","wb+");
+		
 		rewind(pFuncionario);
 		while(!feof(pFuncionario)){
 			fread(&funcExcluir,sizeof(Funcionario),1,pFuncionario);
-			
 			if(!feof(pFuncionario)){
 				if(strcmp(funcExcluir.nome,strupr(nomePesquisa))==0){
 					printf("\n Funcionario Localizado!\n Registro excluido com sucesso!\n ");
@@ -229,8 +225,10 @@ void excluir(){
 	}else{
 		printf("\n Funcionario nao localizado!\n ");		
 	}
-	//fclose(pFuncionario);
-	//fclose(pExcluir);
+//	fclose(pFuncionario);
+//	fclose(pExcluir);
+//	remove("Funcionarios.txt");
+//	rename("pExcluir.txt","Funcionarios.txt");
 	getch();
 	system("cls");
 }
@@ -318,14 +316,16 @@ int verificaUltimoId(){
 		while(!feof(pFuncionario)){
 			fread(&aux,sizeof(Funcionario),1,pFuncionario);
 			if(!feof(pFuncionario)){
-				contador++;
+				if (aux.id > contador){
+					contador = aux.id;
+				}
 			}
 		}
 	}else{
 		printf("\n Erro ao abrir arquivo.\n");	
 	}
 	fclose(pFuncionario);
-	return contador;
+	return contador + 1;
 }
 
 //Procedimento de Validação de Login Admin ou Gerente / Vendedor 
