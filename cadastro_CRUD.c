@@ -1,5 +1,11 @@
-//Projeto para estudo contendo CRUD com Arquivo e Login
-
+/*Projeto para estudo contendo CRUD com Arquivo e Login
+	1. Não deixa cadastrar / alterar nomes / logins repetidos
+	2. Validação de Login para ADMIN / Gerente / Vendedor
+	3. Somente o ADMIN permite pesquisar (consultar) dados completos de todos os usuários
+	4. Gerente / Vendedor consultam seus dados individualmente
+	5. Id automatico e nao repetido
+	6. Cadastra / Altera / Exclui / Consulta / Lista / Pesquisa
+*/
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
@@ -7,12 +13,12 @@
 
 //estrutura para Login de usuario
 typedef struct Usuario{
-	char login[20], senha[15];
+	char login[20], senha[20];
 }Usuario;
 
 //Estrutura para manutenção de funcionario
 typedef struct Funcionario{
-	char nome[20], endereco[20];
+	char nome[20], endereco[200];
 	int id, idade, cargo;
 	float salario;
 	struct Usuario usu;
@@ -23,14 +29,14 @@ void cadastrar();
 void listar();
 void alterar();
 void excluir();
-void pesquisar();
+void pesquisar(char nome[20]);
 void consulta(char nome[20]);
-void menuCrud();
-void menuVendedor();
+void menuCrud(char nome[20]);
+void menuVendedor(char nome[20]);
 void validaLogin();
 int verificaNomeExistente(char nome[20]);
 
-//Pontoteiro do Arquivo Funcionario
+//Ponteiro do Arquivo Funcionario
 FILE *pFuncionario;
 
 
@@ -40,7 +46,7 @@ int main(){
 	//menuCrud();
 }
 
-//Procedimento - CADASTRAR funcionario
+//Procedimento - CADASTRAR
 void cadastrar(){
 	char nome[20];
 	int op,cargo;
@@ -72,9 +78,10 @@ void cadastrar(){
 			}
 		}while((cargo <= 0) || (cargo > 2));
 
-		printf("\n\n Informe os dados para acesso do sistema.\n\n Login: ");
-		fflush(stdin);
-		gets(func.usu.login);
+		printf("\n\n Informe os dados para acesso do sistema.\n\n Login: %s\n",strupr(func.nome));
+		strcpy(func.usu.login,strupr(func.nome));
+		//fflush(stdin);
+		//gets(func.usu.login);
 		printf(" Senha: ");
 		fflush(stdin);
 		gets(func.usu.senha);
@@ -93,9 +100,10 @@ void cadastrar(){
 	system("cls");
 }
 
-//Procedimento - LISTAR funcionario
+//Procedimento - LISTAR
 void listar(){
 	system("cls");
+	int verificaCadFun = 0;
 	Funcionario auxfunc;
 	pFuncionario = fopen("Funcionarios.txt","rb");
 	if(pFuncionario!=NULL){
@@ -111,6 +119,7 @@ void listar(){
 				if (auxfunc.cargo == 2){
 					printf(" Cargo: Vendedor\n\n");
 				}
+				verificaCadFun = 1;
 			}
 		}
 		fclose(pFuncionario);
@@ -118,7 +127,7 @@ void listar(){
 		printf(" Erro ao tentar abrir arquivo\n");
 	}
 	
-	if (pFuncionario == NULL){
+	if (verificaCadFun == 0){
 		printf("\n\t  Nao ha funcionarios cadastrados para listar...\n");
 	}
 	fclose(pFuncionario);
@@ -126,6 +135,7 @@ void listar(){
 	system("cls");
 }
 
+//Procedimento - ALTERAR
 void alterar(){
 	
 	Funcionario func, funcAlt;
@@ -138,6 +148,8 @@ void alterar(){
 	fflush(stdin);
 	gets(nomePesquisa);
 	if(verificaNomeExistente(strupr(nomePesquisa)) == 1){
+		printf("\n\n Dados do Funcionario localizado:\n");
+		consulta(strupr(nomePesquisa));
 		printf("\n Informe os dados para alteracao do Funcionario.\n");
 		printf(" Nome: ");
 		fflush(stdin);
@@ -158,12 +170,13 @@ void alterar(){
 						scanf("%d",&funcAlt.idade);
 						printf(" Valor Salario R$: ");
 						scanf("%f",&funcAlt.salario);
-						printf(" Login: ");
-						fflush(stdin);
-						gets(funcAlt.usu.login);
+						printf(" Login: %s\n",func.usu.login);
+						//fflush(stdin);
+						//gets(funcAlt.usu.login);
 						printf(" Senha: ");
 						fflush(stdin);
 						gets(funcAlt.usu.senha);
+						strcpy(funcAlt.usu.login,strupr(func.usu.login));
 						funcAlt.id = func.id;
 						funcAlt.cargo = func.cargo; 
 						fseek(pFuncionario,cont*sizeof(Funcionario),SEEK_SET);
@@ -188,7 +201,7 @@ void alterar(){
 	system("cls");
 }
 
-//Procedimento - EXCLUIR um funcionario
+//Procedimento - EXCLUIR
 void excluir(){
 	char nomePesquisa[20];
 	Funcionario funcExcluir;
@@ -225,10 +238,7 @@ void excluir(){
 	}else{
 		printf("\n Funcionario nao localizado!\n ");		
 	}
-//	fclose(pFuncionario);
-//	fclose(pExcluir);
-//	remove("Funcionarios.txt");
-//	rename("pExcluir.txt","Funcionarios.txt");
+
 	getch();
 	system("cls");
 }
@@ -262,25 +272,30 @@ void consulta(char nome[20]){
 
 }
 
-//Procedimento - PESQUISAR funcionario
-void pesquisar(){
+//Procedimento - PESQUISAR dados do funcionario (Somente o ADMIN tem acesso a dados completo de todos os funcionarios)
+void pesquisar(char nomeUsuario[20]){
 	system("cls");
 	char nomePesquisa[20];
-	printf("\n\n\t--------------------------------------------------\n\t\t\tPESQUISA DE FUNCIONARIOS\n\t--------------------------------------------------\n\n");
-	printf("\n Dados da Pesquisa...\n Informe o NOME do Funcionario que deseja localizar:\n ");
-	fflush(stdin);
-	gets(nomePesquisa);
-	if (verificaNomeExistente(strupr(nomePesquisa)) == 1){
-		printf("\n Dados do Funcionario localizado:\n");
-		consulta(strupr(nomePesquisa));
+	if (strcmp(nomeUsuario, "ADMIN") == 0){
+		printf("\n\n\t--------------------------------------------------\n\t\t\tPESQUISA DE FUNCIONARIOS\n\t--------------------------------------------------\n\n");
+		printf("\n Dados da Pesquisa...\n Informe o NOME do Funcionario que deseja localizar:\n ");
+		fflush(stdin);
+		gets(nomePesquisa);
+		if (verificaNomeExistente(strupr(nomePesquisa)) == 1){
+			printf("\n Dados do Funcionario localizado:\n");
+			consulta(strupr(nomePesquisa));
+		}else{
+			printf("\n Funcionario nao localizado!\n ");
+		}
 	}else{
-		printf("\n Funcionario nao localizado!\n ");
+		printf("\n\n\t--------------------------------------------------\n\t\t\tDADOS DO FUNCIONARIO\n\t--------------------------------------------------\n\n");
+		consulta(nomeUsuario);
 	}
 	getch();
 	system("cls");
 }
 
-//Função que verifica se um nome ja esta cadastrado e nao permite que o usuario cadastre novamente o msmo nome
+//Função que verifica se um nome ja esta cadastrado e nao permite que o usuario cadastre novamente o mesmo nome
 int verificaNomeExistente(char nome[20]){
 	Funcionario aux;
 
@@ -305,10 +320,12 @@ int verificaNomeExistente(char nome[20]){
 	return verificador;
 }
 
+//Função verificadora do ultimo ID gerado
 int verificaUltimoId(){
 	Funcionario aux;
 
-	int contador = 1; 
+	int contador = 0, verificaId; 
+	
 	
 	pFuncionario = fopen("Funcionarios.txt","rb");
 	if(pFuncionario!=NULL){
@@ -316,19 +333,27 @@ int verificaUltimoId(){
 		while(!feof(pFuncionario)){
 			fread(&aux,sizeof(Funcionario),1,pFuncionario);
 			if(!feof(pFuncionario)){
-				if (aux.id > contador){
-					contador = aux.id;
-				}
+				contador++;
+				verificaId = aux.id;
 			}
 		}
 	}else{
 		printf("\n Erro ao abrir arquivo.\n");	
 	}
 	fclose(pFuncionario);
-	return contador + 1;
+	
+	if (contador == 0){
+		return contador + 1;	
+	}
+	
+	if (verificaId >= contador){
+		return verificaId + 1;	
+	}
+	
+	
 }
 
-//Procedimento de Validação de Login Admin ou Gerente / Vendedor 
+//Procedimento de Validação de Login Admin ou Gerente / Vendedor / ADMIN
 void validaLogin(){
 	char login[20],senha[20];
 	int i=0, verificaLogin = 0;
@@ -348,7 +373,7 @@ void validaLogin(){
 			
 			if (strcmp(senha, "123") == 0){
 				verificaLogin = 1;
-				menuCrud();
+				menuCrud("ADMIN");
 			}else{
 				verificaLogin = 0;
 				printf("\n\t\t\t\t\t\t\tSenha incorreta!\n\t\t\t\t\t");
@@ -375,12 +400,12 @@ void validaLogin(){
 				}
 				if (verificaLogin == 1){
 					if (aux.cargo == 1){
-							fclose(pFuncionario);
-						menuCrud();
+						fclose(pFuncionario);
+						menuCrud(strupr(login));
 					}
 					if (aux.cargo == 2){
 						fclose(pFuncionario);
-						menuVendedor();
+						menuVendedor(strupr(login));
 					}
 				}
 			}
@@ -394,36 +419,40 @@ void validaLogin(){
 	
 }
 
-//Procedimento MENU contendo o CRUD da aplocação (acessado apenas pelos usuarios ADMIN ou um usuario VENDEDOR)
-void menuCrud(){
+//Procedimento MENU contendo o CRUD da aplocação (acessado apenas pelos usuarios ADMIN ou um usuario GERENTE)
+void menuCrud(char nome[20]){
 	int op;
 
 	do{
 		system("cls");
-		printf("\n\n\n\n\n\n\t\t\t\t--------------------------------------------------\n\t\t\t\tM E N U    D E  O P C O E S    D O   S I S T E M A\n\t\t\t\t--------------------------------------------------\n\n\n");
-		printf("\t\t\t\t\tSelecione uma das Opcoes abaixo...\n\n\t\t\t\t\t\t[1] CADASTRAR\n\t\t\t\t\t\t[2] LISTAR \n\t\t\t\t\t\t[3] ALTERAR \n\t\t\t\t\t\t[4] EXCLUIR\n\t\t\t\t\t\t[5] CONSULTAR\n\t\t\t\t\t\t[6] REFAZER LOGIN\n\t\t\t\t\t\t[0] SAIR\n\n\t\t\t\t\t\tOPCAO: ");
-		
+		printf("\n\n\n\n\n\t\t\t\t--------------------------------------------------\n\t\t\t\tM E N U    D E  O P C O E S    D O   S I S T E M A\n\t\t\t\t--------------------------------------------------\n\n\n");
+		if (strcmp(nome, "ADMIN") == 0){
+			printf("\t\t\t\t\t     CADASTRO DE FUNCIONARIOS\n\n\t\t\t\t\tSelecione uma das Opcoes abaixo...\n\n\t\t\t\t\t\t[1] CADASTRAR\n\t\t\t\t\t\t[2] LISTAR \n\t\t\t\t\t\t[3] ALTERAR \n\t\t\t\t\t\t[4] EXCLUIR\n\t\t\t\t\t\t[5] CONSULTAR\n\t\t\t\t\t\t[6] REFAZER LOGIN\n\t\t\t\t\t\t[0] SAIR\n\n\t\t\t\t\t\tOPCAO: ");
+		}
+		else{
+			printf("\t\t\t\t\t     CADASTRO DE FUNCIONARIOS\n\n\t\t\t\t\tSelecione uma das Opcoes abaixo...\n\n\t\t\t\t\t\t[1] CADASTRAR\n\t\t\t\t\t\t[2] LISTAR \n\t\t\t\t\t\t[3] ALTERAR \n\t\t\t\t\t\t[4] EXCLUIR\n\t\t\t\t\t\t[5] SEUS DADOS\n\t\t\t\t\t\t[6] REFAZER LOGIN\n\t\t\t\t\t\t[0] SAIR\n\n\t\t\t\t\t\tOPCAO: ");
+		}
 		scanf("%d",&op);
 		switch(op){
 			case 1:
 				cadastrar();
-				menuCrud();
+				menuCrud(nome);
 				break;
 			case 2:
 				listar();
-				menuCrud();
+				menuCrud(nome);
 				break;
 			case 3:
 				alterar();
-				menuCrud();
+				menuCrud(nome);
 				break;
 			case 4: 
 				excluir();
-				menuCrud();
+				menuCrud(nome);
 				break;
 			case 5:
-				pesquisar();
-				menuCrud();
+				pesquisar(nome);
+				menuCrud(nome);
 				break;
 			case 6:
 				main();
@@ -443,22 +472,26 @@ void menuCrud(){
 }
 
 
-//Procedimento Menu Vendedor
-void menuVendedor(){
+//Procedimento MENU Vendedor
+void menuVendedor(char nome[20]){
 	int op;
 
 	do{
 		system("cls");
 		printf("\n\n\n\n\n\n\t\t\t\t--------------------------------------------------\n\t\t\t\tM E N U    D E  O P C O E S    D O   S I S T E M A\n\t\t\t\t--------------------------------------------------\n\n\n");
-		printf("\t\t\t\t\tSelecione uma das Opcoes abaixo...\n\n\t\t\t\t\t\t[1] LISTAR\n\t\t\t\t\t\t[2] REFAZER LOGIN \n\t\t\t\t\t\t[0] SAIR\n\n\t\t\t\t\t\tOPCAO: ");
+		printf("\t\t\t\t\tSelecione uma das Opcoes abaixo...\n\n\t\t\t\t\t\t[1] LISTAR FUNCIONARIOS\n\t\t\t\t\t\t[2] SEUS DADOS \n\t\t\t\t\t\t[3] REFAZER LOGIN \n\t\t\t\t\t\t[0] SAIR\n\n\t\t\t\t\t\tOPCAO: ");
 		
 		scanf("%d",&op);
 		switch(op){
 			case 1:
 				listar();
-				menuVendedor();
+				menuVendedor(strupr(nome));
 				break;
 			case 2:
+				pesquisar(nome);
+				menuVendedor(strupr(nome));
+				break;
+			case 3:
 				main();
 				break;	
 			case 0:
